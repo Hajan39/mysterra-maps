@@ -2,6 +2,11 @@ name: Build CZ map package
 
 on:
   workflow_dispatch:
+    inputs:
+      replace:
+        description: 'Replace an existing release of the same Protomaps build'
+        type: boolean
+        default: false
   schedule:
     - cron: '0 4 3 * *' # monthly
 
@@ -28,7 +33,10 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           VERSION=$(node -p "require('./out/manifest.json').version")
-          gh release view "v$VERSION" >/dev/null 2>&1 && { echo "v$VERSION already released"; exit 0; }
+          if gh release view "v$VERSION" >/dev/null 2>&1; then
+            if [ "${{ inputs.replace }}" != "true" ]; then echo "v$VERSION already released"; exit 0; fi
+            gh release delete "v$VERSION" --yes --cleanup-tag
+          fi
           gh release create "v$VERSION" out/cz.pmtiles out/assets.zip out/manifest.json \
             --title "CZ map $VERSION" \
             --notes "Czechia extract of Protomaps build $VERSION. Map data © OpenStreetMap contributors (ODbL), Protomaps. Fonts: Noto Sans (OFL)."

@@ -9,11 +9,12 @@ import { cpSync, createReadStream, mkdirSync, rmSync, statSync, writeFileSync } 
 import { join } from 'node:path';
 
 const BBOX = '12.09,48.55,18.86,51.06';
-const MAX_ZOOM = '15';
+// z14: z15 doubled the size (1.74 GB) for detail MapLibre overzoom covers well enough.
+const MAX_ZOOM = '14';
 // Every stack the Protomaps style references (incl. format overrides), all glyph ranges: a missing
 // range file can stall symbol layout for a whole tile in MapLibre Native.
 const FONTS = ['Noto Sans Regular', 'Noto Sans Medium', 'Noto Sans Italic', 'Noto Sans Devanagari Regular v1'];
-const SPRITES = ['light.json', 'light.png', 'light@2x.json', 'light@2x.png'];
+const SPRITES = ['light', 'dark'].flatMap((f) => [`${f}.json`, `${f}.png`, `${f}@2x.json`, `${f}@2x.png`]);
 const MAX_BYTES = 2 * 1024 ** 3; // GitHub release asset limit
 
 const out = 'out';
