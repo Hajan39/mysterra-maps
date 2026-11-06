@@ -32,8 +32,13 @@ const MAX_BYTES = 2 * 1024 ** 3 - 1; // GitHub release asset limit
 
 const repo = process.env.GITHUB_REPOSITORY;
 if (!repo) throw new Error('GITHUB_REPOSITORY is not set');
-const only = process.env.ONLY?.split(',');
-const regions = REGIONS.filter((r) => !only || only.includes(r.id));
+// An empty workflow input arrives as ONLY="" and means "all regions".
+const only = (process.env.ONLY ?? '')
+  .split(',')
+  .map((s) => s.trim())
+  .filter(Boolean);
+const regions = REGIONS.filter((r) => !only.length || only.includes(r.id));
+if (!regions.length) throw new Error(`ONLY=${process.env.ONLY} matches no region`);
 const out = 'out';
 const work = 'work';
 rmSync(out, { recursive: true, force: true });
@@ -132,6 +137,9 @@ for (const r of regions) {
   await publish(file);
 }
 
+// Never publish (or clean up after) a release that lacks a region it was meant to carry.
+const missing = regions.filter((r) => !files.some((f) => f.name === `${r.id}.pmtiles`));
+if (missing.length) throw new Error(`missing region files: ${missing.map((r) => r.id).join(', ')}`);
 const manifest = {
   version,
   files,
